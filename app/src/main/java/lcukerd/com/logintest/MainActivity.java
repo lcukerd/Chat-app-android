@@ -1,5 +1,6 @@
 package lcukerd.com.logintest;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.BoolRes;
 import android.support.v7.app.AppCompatActivity;
@@ -18,6 +19,8 @@ import com.kumulos.android.ResponseHandler;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+
+import static android.provider.AlarmClock.EXTRA_MESSAGE;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -38,7 +41,8 @@ public class MainActivity extends AppCompatActivity {
         login.setOnClickListener(new View.OnClickListener()
         {
             @Override
-            public void onClick(View view) {
+            public void onClick(View view)
+            {
 
                 String username = UName.getText().toString();
                 String password = UPass.getText().toString();
@@ -46,32 +50,39 @@ public class MainActivity extends AppCompatActivity {
                 LinkedHashMap<String, String> params = new LinkedHashMap<String, String>();
                 params.put("accountName", username);
                 params.put("password",password);
-                    Kumulos.call("login", params, new ResponseHandler() {
-                        @Override
-                        public void didCompleteWithResult(Object result) {
-                            ArrayList<LinkedHashMap<String, Object>> objects = (ArrayList<LinkedHashMap<String,Object>>) result;
-                            LinkedHashMap<String, Object> item= objects.get(0);
-                            ID = Integer.parseInt(item.get("credentialID").toString());
+                        Kumulos.call("login", params, new ResponseHandler() {
+                            @Override
+                            public void didCompleteWithResult(Object result) {
+                                ArrayList<LinkedHashMap<String, Object>> objects = (ArrayList<LinkedHashMap<String, Object>>) result;
+                                if (objects.size()==0)
+                                    UName.setText("Login Failed");
+                                else {
+                                    LinkedHashMap<String, Object> item = objects.get(0);
+                                    ID = Integer.parseInt(item.get("credentialID").toString());
 
-                            HashMap<String,String> paramage= new HashMap<String, String>();
-                            paramage.put("credential", Integer.toString(ID));
-                            Kumulos.call("getage", paramage, new ResponseHandler()
-                            {
-                                @Override
-                                public void didCompleteWithResult(Object result)
-                                {
-                                    ArrayList<LinkedHashMap<String, Object>> objects = (ArrayList<LinkedHashMap<String,Object>>) result;
-                                    LinkedHashMap<String, Object> item= objects.get(0);
-                                    int age = Integer.parseInt(item.get("age").toString());
-                                    UAge.setText(Integer.toString(age));
+                                    HashMap<String, String> paramage = new HashMap<String, String>();
+                                    paramage.put("credential", Integer.toString(ID));
+                                    Kumulos.call("getage", paramage, new ResponseHandler() {
+                                        @Override
+                                        public void didCompleteWithResult(Object result) {
+                                            ArrayList<LinkedHashMap<String, Object>> objects = (ArrayList<LinkedHashMap<String, Object>>) result;
+                                            LinkedHashMap<String, Object> item = objects.get(0);
+                                            int age = Integer.parseInt(item.get("age").toString());
+                                            UAge.setText(Integer.toString(age));
+                                        }
+
+                                    });
+                                    createNew();
+
                                 }
-                            });
-                        }
-                    });
+                            }
+                        });
 
                 params.clear();
 
-                }
+
+
+            }
         });
         Button signup = (Button) findViewById(R.id.signup);
         signup.setOnClickListener(new View.OnClickListener()
@@ -97,12 +108,19 @@ public class MainActivity extends AppCompatActivity {
                             params.put("credential", Integer.toString(ID));
                             Kumulos.call("setAge", params, new ResponseHandler());
                             UAge.setText("");
+                            createNew();
                         }
                     });
 
 
+
             }
         });
+    }
+    public void createNew() {
+        Intent intent = new Intent(this, chatActivity.class);
+        intent.putExtra("ID", ID);
+        startActivity(intent);
     }
 
 }
