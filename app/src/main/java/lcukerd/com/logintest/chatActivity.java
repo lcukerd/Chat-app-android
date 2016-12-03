@@ -20,8 +20,12 @@ public class chatActivity extends AppCompatActivity {
 
     private static EditText msg;
     Thread recieve;
-    private int ID=0;
+    private int ID=0,status=0;
     private EditText chat ;
+    private int id =0;
+    private LinkedHashMap<String, String> param;
+    private String message,sender;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,45 +39,92 @@ public class chatActivity extends AppCompatActivity {
         msg  = (EditText) findViewById(R.id.message);
         chat = (EditText) findViewById(R.id.chat);
         chatActivity cl = chatActivity.this;
-        recieve = new Thread(new Reciever());
+        recieve = new Thread(new waitforclick());
         recieve.start();
+        param = new LinkedHashMap<String, String>();
 
-        Button Send = (Button) findViewById(R.id.send);
-        Send.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String message = msg.getText().toString();
-                LinkedHashMap<String, String> params = new LinkedHashMap<String, String>();
-                params.put("message", message);
-                params.put("user",String.valueOf(ID));
-                Kumulos.call("sendmsg",params,new ResponseHandler());
-                msg.setText("");
-            }
-        });
+
+        //while (true) {
+            param.clear();
+            Kumulos.call("getid", new ResponseHandler() {
+                @Override
+                public void didCompleteWithResult(Object result) {
+                    ArrayList<LinkedHashMap<String, Object>> objects = (ArrayList<LinkedHashMap<String, Object>>) result;
+                    LinkedHashMap<String, Object> item = objects.get(0);
+                    id = Integer.parseInt(item.get("messageID").toString());
+
+                    param.clear();
+                    //while(true) {
+                    param.clear();
+                    param.put("messageID", Integer.toString(id));
+                    Kumulos.call("getmsg", param, new ResponseHandler() {
+                        @Override
+                        public void didCompleteWithResult(Object result) {
+                            ArrayList<LinkedHashMap<String, Object>> messages = (ArrayList<LinkedHashMap<String, Object>>) result;
+                            LinkedHashMap<String, Object> item = messages.get(0);
+                            message = item.get("message").toString();
+                            LinkedHashMap<String, Object> sentby = (LinkedHashMap<String, Object>) item.get("user");
+                            sender = sentby.get("accountName").toString();
+                            id++;
+                            chat.setText(sender + ": " + message + System.getProperty("line.separator"));
+                        }
+
+                        public void didFailWithError(Object result) {
+
+                        }
+                    });
+                    //}
+                }
+            });
+
+        //}
+
 
 
     }
-    public static int showmsg(String mess,String sender)
+
+
+    class waitforclick implements Runnable {
+
+        private Button Send = (Button) findViewById(R.id.send);
+
+        public void run()
+        {
+            Send.setOnClickListener(new View.OnClickListener()
+            {
+                @Override
+                public void onClick (View view){
+                    String message = msg.getText().toString();
+                    LinkedHashMap<String, String> params = new LinkedHashMap<String, String>();
+                    params.put("message", message);
+                    params.put("user", String.valueOf(ID));
+                    Kumulos.call("sendmsg", params, new ResponseHandler());
+                    msg.setText("");
+                }
+            }
+
+            );
+        }
+
+    }
+
+
+    /*public static int showmsg(String mess,String sender)
     {
         msg.setText(sender + ":" + mess + System.getProperty("line.separator"));
         return 1;
 
-    }
+    }*/
 }
 
 
-class Reciever implements Runnable {
+/*class Reciever implements Runnable {
     EditText chatBox;
     int id =0;
     private chatmsg storemsg=new chatmsg();
     LinkedHashMap<String, String> param;
     int status=0;
     String message,sender;
-
-    /*public Reciever()
-    {
-
-    }*/
 
     public void run()
     {
@@ -107,20 +158,20 @@ class Reciever implements Runnable {
             });
             }
         });
-        /*while(status==0)
+        while(status==0)
         {
             int a=0;
         }
-        chatBox.setText(sender + ":" + message + System.getProperty("line.separator"));*/
+        chatBox.setText(sender + ":" + message + System.getProperty("line.separator"));
 
     }
 
 
 
 
-}
+}*/
 
-class chatmsg
+/*class chatmsg
 {
     private String msg;
     private String sender;
@@ -138,5 +189,5 @@ class chatmsg
     {
         state=chatActivity.showmsg(msg,sender);
     }
-}
+}*/
 
